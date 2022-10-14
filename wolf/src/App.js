@@ -1,91 +1,103 @@
 import logo from './logo.svg';
 import {useEffect, useState} from "react";
 import './App.css';
-import axios from 'axios';
+import 'bootstrap/dist/css/bootstrap.min.css'
+import {Container, InputGroup, FormControl, Button, Row, Card} from 'react-bootstrap';
+
+const CLIENT_ID = "2d0ae34f47b4466880e5359a966ee484";
+const CLIENT_SECRET = "60a63ce3b6ec4656b4c3210ec9dd153a";
 
 function App() {
-    const CLIENT_ID = "2d0ae34f47b4466880e5359a966ee484"
-    const REDIRECT_URI = "http://localhost:3000/"
-    const AUTH_ENDPOINT = "https://accounts.spotify.com/authorize"
-    const RESPONSE_TYPE = "token"
-
-    const [token, setToken] = useState("")
-    const [searchKey, setSearchKey] = useState("")
-    const [artists, setArtists] = useState([])
-
-    // const getToken = () => {
-    //     let urlParams = new URLSearchParams(window.location.hash.replace("#","?"));
-    //     let token = urlParams.get('access_token');
-    // }
+    const[searchInput, setSearchInput] = useState("");
+    const[accessToken, setAccessToken] = useState("");
 
     useEffect(() => {
-        const hash = window.location.hash
-        let token = window.localStorage.getItem("token")
-
-        // getToken()
-
-
-        if (!token && hash) {
-            token = hash.substring(1).split("&").find(elem => elem.startsWith("access_token")).split("=")[1]
-
-            window.location.hash = ""
-            window.localStorage.setItem("token", token)
+        //API Access Token
+        var authParameters = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: 'grant_type=client_credentials&client_id=' + CLIENT_ID + '&client_secret=' + CLIENT_SECRET
         }
-
-        setToken(token)
-
+        fetch('https://accounts.spotify.com/api/token', authParameters)
+            .then(result => result.json())
+            .then(data => console.log(data.access_token))
     }, [])
 
-    const logout = () => {
-        setToken("")
-        window.localStorage.removeItem("token")
-    }
+    //Search
+    async function search(){
+        console.log("Search for " + searchInput);
 
-    const searchArtists = async (e) => {
-        e.preventDefault()
-        const {data} = await axios.get("https://api.spotify.com/v1/search", {
+        //get request for Artist ID
+        var searchParameters = {
+            method: 'GET',
             headers: {
-                Authorization: `Bearer ${token}`
-            },
-            params: {
-                q: searchKey,
-                type: "artist"
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + accessToken
             }
-        })
+        }
+        var artistID = await fetch('https://api.spotify.com/v1/search?q=' + searchInput + '&type=artist', searchParameters)
+            .then(response => response.json())
+            .then(data => { return data.artists.items[0].id })
 
-        setArtists(data.artists.items)
+        console.log("Artist ID is" + artistID);   
+        var albums = await fetch('https://api.spotify.com/v1/artists/' + artistID + '/albums' + '?include_groups=album&market=US&limit=50', searchParameters)
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+            });
     }
 
-    const renderArtists = () => {
-        return artists.map(artist => (
-            <div className="py-10" key={artist.id}>
-                {artist.images.length ? <img width={"300px"} src={artist.images[0].url} alt=""/> : <div>No Image</div>}
-                {artist.name}
-            </div>
-        ))
-    }
-
-    return (
+    return(
         <div className="App">
-            <header className="App-header">
-                <p className="text-4xl font-bold">Spotted</p>
-                {!token ?
-                    <a href={`${AUTH_ENDPOINT}?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=${RESPONSE_TYPE}`}>Login
-                        to Spotify</a>
-                    : <button onClick={logout}>Logout</button>}
+            <Container id="Search">
+                <InputGroup className="mb-3" size="lg">
+                    <FormControl placeholder="Search for song" type="input" 
+                    onKeyPress={event => {
+                        if(event.key == "Enter"){
+                            search(); //call search function
+                            } 
+                        }
+                    } onChange={event => setSearchInput(event.target.value)}>
+                    </FormControl>
+                    <Button onClick={search}>Search</Button>
+                </InputGroup>
+            </Container>
 
-                {token ?
-                    <form onSubmit={searchArtists}>
-                        <input className="text-black" type="text" onChange={e => setSearchKey(e.target.value)}/>
-                        <button type={"submit"}>Search</button>
-                    </form>
+            <Container id="Songs">
+                <Row className="mx-2 row row-cols-4">
+                    <Card>
+                        <Card.Img src="#"/>
+                            <Card.Body>
+                                <Card.Title>Album Name</Card.Title>
+                            </Card.Body>
+                    </Card>
+                    
+                    <Card>
+                        <Card.Img src="#"/>
+                            <Card.Body>
+                                <Card.Title>Album Name</Card.Title>
+                            </Card.Body>
+                    </Card>
 
-                    : <h2>Please login</h2>
-                }
+                    <Card>
+                        <Card.Img src="#"/>
+                            <Card.Body>
+                                <Card.Title>Album Name</Card.Title>
+                            </Card.Body>
+                    </Card>
 
-                {renderArtists()}
+                    <Card>
+                        <Card.Img src="#"/>
+                            <Card.Body>
+                                <Card.Title>Album Name</Card.Title>
+                            </Card.Body>
+                    </Card>
+                </Row>
 
-            </header>
+                
+            </Container>
         </div>
     );
 }
