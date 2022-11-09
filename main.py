@@ -6,6 +6,22 @@ from spotipy.oauth2 import SpotifyClientCredentials
 from spotipy.oauth2 import SpotifyOAuth
 import requests
 
+## STREAMLIT SETUP ##
+st.set_page_config(
+    page_title="Spotted",
+    page_icon="https://www.freepnglogos.com/uploads/spotify-logo-png/file-spotify-logo-png-4.png",
+    layout="centered"
+)
+
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True) #Hide ugly streamlit branding
+
+## SPOTIFY AUTH FLOW ##
 CLIENT_ID = '2d0ae34f47b4466880e5359a966ee484'
 CLIENT_SECRET = '60a63ce3b6ec4656b4c3210ec9dd153a'
 
@@ -15,21 +31,11 @@ CLIENT_SECRET = '60a63ce3b6ec4656b4c3210ec9dd153a'
 token = util.prompt_for_user_token('jadenbanze',"user-modify-playback-state",client_id=CLIENT_ID,client_secret=CLIENT_SECRET,redirect_uri="http://localhost:3000")
 sp = spotipy.Spotify(auth=token)
 
-def q():
-    sp.add_to_queue(track_id, device_id=None)
-
-hide_streamlit_style = """
-            <style>
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            </style>
-            """
-st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
-
-st.header('Spotted')
-
-search_keyword = st.text_input("Enter song name:")
-search_button = st.button("Search")
+## APPLICATION ##
+st.title('Spotted')
+c1, c2  = st.columns(2)
+search_keyword = c1.text_input("Enter song name:")
+search_button = c1.button("Search")
 
 search_results = [] #all search results list
 tracks = [] #tracks list
@@ -41,8 +47,14 @@ if search_keyword is not None and len(str(search_keyword)) > 0: #search for trac
         search_results.append(track['name'] + " by " + track['artists'][0]['name'])
 
 selected_track = None
+selected_track = c1.selectbox("Select your song: ", search_results)
 
-selected_track = st.selectbox("Select your song: ", search_results)
+def add_to_queue(): #add to queue function for button on_click
+    try:
+        sp.add_to_queue(track_id, device_id=None)
+        st.success("Song has been successfully added to queue")
+    except:
+        st.warning("No active device found!")
 
 if selected_track is not None and len(tracks) > 0: #get track_id and album cover
     tracks_list = tracks['tracks']['items']
@@ -55,6 +67,7 @@ if selected_track is not None and len(tracks) > 0: #get track_id and album cover
                 track_album = track['album']['name']
                 img_album = track['album']['images'][1]['url']
 
+
     if track_id is not None:
-        st.image(img_album)
-        st.button(label="ADD TO QUEUE",on_click=q)
+        c2.image(img_album)
+        c1.button(label="ADD TO QUEUE",on_click=add_to_queue,type="primary") #calls q function to add song to queue
