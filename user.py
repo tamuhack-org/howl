@@ -1,6 +1,7 @@
 import streamlit as st
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
+from tinydb import TinyDB, Query
 
 ## STREAMLIT SETUP ##
 st.set_page_config(
@@ -25,11 +26,12 @@ CLIENT_SECRET = '60a63ce3b6ec4656b4c3210ec9dd153a' #hife laterin env file
 auth_manager = SpotifyClientCredentials(client_id=CLIENT_ID, client_secret=CLIENT_SECRET)
 sp = spotipy.Spotify(auth_manager=auth_manager)
 
-
+db = TinyDB('data.json')
 
 st.title('Spotted')
 c1, c2  = st.columns(2)
 search_keyword = c1.text_input("Enter song name:")
+c1.caption("Enter song name followed by artist for better search results")
 search_button = c1.button("Search")
 
 search_results = [] #all search results list
@@ -45,19 +47,8 @@ selected_track = None
 selected_track = c1.selectbox("Select your song: ", search_results)
 
 def add_to_queue(): #add to queue function for button on_click
-    queued_tracks = [] #queued tracks list to append to "tracks.txt" file
-    album_imgs = [] #album covers corresponding to tracks list
     if track_id is not None:
-        queued_tracks.append(track_id)
-        album_imgs.append(img_album)
-        with open("tracks.txt", "a") as f: #adds track id to txt file 
-            f.write("\n".join(queued_tracks))
-            f.write("\n")   
-
-        with open("images.txt", "a") as f: #adds album cover url's to txt file 
-            f.write("\n".join(album_imgs))
-            f.write("\n")  
-
+        db.insert({'track_id' : track_id, 'image' : img_album}) #inserts track id and album cover
         st.success("Song has been successfully added to queue")
 
 if selected_track is not None and len(tracks) > 0: #get track_id and album cover
@@ -74,5 +65,4 @@ if selected_track is not None and len(tracks) > 0: #get track_id and album cover
 
     if track_id is not None:
         c2.image(img_album)
-        c1.button(label="ADD TO QUEUE",on_click=add_to_queue,type="primary") #calls q function to add song to queue
-        
+        c1.button(label="Add to queue",on_click=add_to_queue,type="primary") #calls q function to add song to queue
