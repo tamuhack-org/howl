@@ -1,0 +1,7 @@
+streamlit
+numpy
+spotipy
+requests
+tinydb
+watchdog
+asyncio
