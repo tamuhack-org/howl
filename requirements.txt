@@ -4,3 +4,4 @@ spotipy
 requests
 tinydb
 watchdog
+asyncio

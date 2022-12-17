@@ -44,6 +44,10 @@ def addtoqueue(tid):
 def clear():
     db.truncate()
 
+def remove(): #removes song from requests and db
+    
+    refresh()
+
 def refresh():
     st.empty()
     if len(db) == 0:

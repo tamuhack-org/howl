@@ -2,6 +2,7 @@ import streamlit as st
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 from tinydb import TinyDB, Query
+import time
 
 ## STREAMLIT SETUP ##
 st.set_page_config(
@@ -47,8 +48,21 @@ selected_track = None
 selected_track = c1.selectbox("Select your song: ", search_results)
 
 def add_to_queue(): #add to queue function for button on_click
-    if track_id is not None:
-        db.insert({'track_id' : track_id, 'image' : img_album}) #inserts track id and album cover
+    session_state = st.session_state() # create a session_state variable
+    disabled_btn = False # default value for disabled_btn
+    current_time = time.time() # get the current time
+
+    # check if the disabled_time key is stored in the session_state object
+    if 'disabled_time' not in session_state:
+        session_state['disabled_time'] = current_time + 10 # set disabled_time to current time + 10 seconds
+
+    # check if the current time is less than the disabled_time stored in the session_state object
+    if current_time < session_state['disabled_time']:
+        disabled_btn = True # disable the button
+
+    # pass the disabled_btn variable as the disabled argument to the button
+    if c1.button(label="Add to queue", type="primary", disabled=disabled_btn):
+        db.insert({'track_id' : track_id, 'image' : img_album})
         st.success("Song has been successfully added to queue")
 
 if selected_track is not None and len(tracks) > 0: #get track_id and album cover
@@ -65,4 +79,9 @@ if selected_track is not None and len(tracks) > 0: #get track_id and album cover
 
     if track_id is not None:
         c2.image(img_album)
-        c1.button(label="Add to queue",on_click=add_to_queue,type="primary") #calls q function to add song to queue
+        #st.set_state('disabled_btn', False)
+        add_to_queue()
+        
+
+#############
+# ANother approach could be using st.empty() for 30 seconds when button is clicked
