@@ -48,21 +48,9 @@ selected_track = None
 selected_track = c1.selectbox("Select your song: ", search_results)
 
 def add_to_queue(): #add to queue function for button on_click
-    session_state = st.session_state() # create a session_state variable
-    disabled_btn = False # default value for disabled_btn
-    current_time = time.time() # get the current time
-
-    # check if the disabled_time key is stored in the session_state object
-    if 'disabled_time' not in session_state:
-        session_state['disabled_time'] = current_time + 10 # set disabled_time to current time + 10 seconds
-
-    # check if the current time is less than the disabled_time stored in the session_state object
-    if current_time < session_state['disabled_time']:
-        disabled_btn = True # disable the button
-
-    # pass the disabled_btn variable as the disabled argument to the button
+    disabled_btn = False
     if c1.button(label="Add to queue", type="primary", disabled=disabled_btn):
-        db.insert({'track_id' : track_id, 'image' : img_album})
+        db.insert({'track_id' : track_id, 'image' : img_album}) #inserts track id and album cover
         st.success("Song has been successfully added to queue")
 
 if selected_track is not None and len(tracks) > 0: #get track_id and album cover

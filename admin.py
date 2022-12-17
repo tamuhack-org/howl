@@ -45,7 +45,6 @@ def clear():
     db.truncate()
 
 def remove(): #removes song from requests and db
-    
     refresh()
 
 def refresh():
