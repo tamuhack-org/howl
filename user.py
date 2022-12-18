@@ -3,57 +3,121 @@ import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 from tinydb import TinyDB, Query
 import time
+from dotenv import load_dotenv
+import os
 
 ## STREAMLIT SETUP ##
+# Set page configuration for Streamlit
 st.set_page_config(
     page_title="Spotted",
     page_icon="https://www.freepnglogos.com/uploads/spotify-logo-png/file-spotify-logo-png-4.png",
     layout="centered"
 )
 
+# Hide the default Streamlit styles
 hide_streamlit_style = """
-            <style>
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            </style>
-            """
-st.markdown(hide_streamlit_style, unsafe_allow_html=True) #Hide ugly streamlit branding
+                <style>
+                div[data-testid="stToolbar"] {
+                visibility: hidden;
+                height: 0%;
+                position: fixed;
+                }
+                div[data-testid="stDecoration"] {
+                visibility: hidden;
+                height: 0%;
+                position: fixed;
+                }
+                div[data-testid="stStatusWidget"] {
+                visibility: hidden;
+                height: 0%;
+                position: fixed;
+                }
+                #MainMenu {
+                visibility: hidden;
+                height: 0%;
+                }
+                header {
+                visibility: hidden;
+                height: 0%;
+                }
+                footer {
+                visibility: hidden;
+                height: 0%;
+                }
+                </style>
+                """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True) # Hide UGLY streamlit styles
+
+# Load environment variables
+load_dotenv()
 
 ## USER AUTH FLOW (CAN ONLY SEARCH FOR TRACKS AND GET TRACK ID) ##
+# Get client ID and secret from environment variables
+CLIENT_ID = os.getenv("CLIENT_ID")
+CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 
-CLIENT_ID = '2d0ae34f47b4466880e5359a966ee484' #hide later in env file
-CLIENT_SECRET = '60a63ce3b6ec4656b4c3210ec9dd153a' #hife laterin env file
-
+# Initialize Spotify client with client ID and secret
 auth_manager = SpotifyClientCredentials(client_id=CLIENT_ID, client_secret=CLIENT_SECRET)
 sp = spotipy.Spotify(auth_manager=auth_manager)
 
+# Initialize TinyDB database
 db = TinyDB('data.json')
 
+# Set page title
 st.title('Spotted')
+
+# Create two columns in the page
 c1, c2  = st.columns(2)
+
+# Add a text input field for the user to enter a search keyword
 search_keyword = c1.text_input("Enter song name:")
+
+# Add a caption to the text input field
 c1.caption("Enter song name followed by artist for better search results")
+
+# Add a button to initiate the search
 search_button = c1.button("Search")
 
-search_results = [] #all search results list
-tracks = [] #tracks list
+# Initialize lists to store search results and tracks
+search_results = [] 
+tracks = [] 
 
-if search_keyword is not None and len(str(search_keyword)) > 0: #search for track and append to track list
+# If the user has entered a search keyword, search for tracks and add them to the track list
+if search_keyword is not None and len(str(search_keyword)) > 0: 
     tracks = sp.search(q='track:'+ search_keyword,type='track', limit=20)
     tracks_list = tracks['tracks']['items']
     for track in tracks_list:
         search_results.append(track['name'] + " by " + track['artists'][0]['name'])
 
+# Initialize a variable to store the selected track
 selected_track = None
+
+# Add a dropdown menu to display the search results and let the user select a track
 selected_track = c1.selectbox("Select your song: ", search_results)
 
-def add_to_queue(): #add to queue function for button on_click
+# Function to add selected track to queue
+def add_to_queue(): 
+    # Add a button to add the track to the queue
     disabled_btn = False
     if c1.button(label="Add to queue", type="primary", disabled=disabled_btn):
-        db.insert({'track_id' : track_id, 'image' : img_album}) #inserts track id and album cover
-        st.success("Song has been successfully added to queue")
+        # Insert the track ID and album cover into the database
+        db.insert({'track_id' : track_id, 'image' : img_album})
+        # Display a success message
+        status = st.empty()
+        status.success("Song has been successfully added to queue")
+        # Disable the button for 30 seconds
+        disabled_btn = True
+        with st.spinner("Please wait 30 seconds for a new request"):
+            time.sleep(30)
+        # Enable the button
+        disabled_btn = False
+        # Clear the status message
+        status.empty()
+        # Display a message indicating that the app is ready for a new request
+        st.info("Ready for new request!")
 
-if selected_track is not None and len(tracks) > 0: #get track_id and album cover
+# If a track has been selected, get the track ID and album cover
+if selected_track is not None and len(tracks) > 0: 
     tracks_list = tracks['tracks']['items']
     track_id = ""
     if len(tracks_list) > 0:
@@ -64,12 +128,7 @@ if selected_track is not None and len(tracks) > 0: #get track_id and album cover
                 track_album = track['album']['name']
                 img_album = track['album']['images'][1]['url']
 
-
+    # If a track ID has been found, display the album cover and add the track to the queue
     if track_id is not None:
         c2.image(img_album)
-        #st.set_state('disabled_btn', False)
         add_to_queue()
-        
-
-#############
-# ANother approach could be using st.empty() for 30 seconds when button is clicked

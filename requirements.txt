@@ -5,3 +5,4 @@ requests
 tinydb
 watchdog
 asyncio
+python-dotenv
