@@ -6,6 +6,7 @@ import functools
 import time
 from dotenv import load_dotenv
 import os
+import psycopg2
 
 ## STREAMLIT SETUP ##
 # Set page configuration for Streamlit
@@ -52,6 +53,11 @@ load_dotenv()
 # Set the client ID and secret for the Spotify API
 CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
+DATABASE_NAME = os.getenv("DATABASE_NAME")
+DATABASE_HOST = os.getenv("DATABASE_HOST")
+DATABASE_USER = os.getenv("DATABASE_USER")
+DATABASE_PASSWORD = os.getenv("DATABASE_PASSWORD")
+DATABASE_PORT = os.getenv("DATABASE_PORT")
 
 # Use the prompt_for_user_token function to get a Spotify API token with the necessary permissions
 token = util.prompt_for_user_token('jadenbanze', "user-modify-playback-state", client_id=CLIENT_ID, client_secret=CLIENT_SECRET, redirect_uri="http://localhost:3000")
@@ -59,8 +65,12 @@ token = util.prompt_for_user_token('jadenbanze', "user-modify-playback-state", c
 # Create a Spotify object using the API token
 sp = spotipy.Spotify(auth=token)
 
-# Create a TinyDB object to store the data
-db = TinyDB('data.json')
+#Create connection to postgesql database
+conn = psycopg2.connect(database=DATABASE_NAME,
+                        host=DATABASE_HOST,
+                        user=DATABASE_USER,
+                        password=DATABASE_PASSWORD,
+                        port=DATABASE_PORT)
 
 # Create a Query object to use for searching the database
 Song = Query()
@@ -74,24 +84,50 @@ def addtoqueue(tid):
     try:
         sp.add_to_queue(tid, device_id=None)
         st.success("Song has been successfully added to queue")
+        # Delete the song from the database
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM songs WHERE track_id = %s;", (tid,))
+        conn.commit()
+        cursor.close()
+
     except:
         st.warning("No active device found!")
 
 # Define a function to clear the database
 def clear():
-    # Use the truncate method to delete all records from the database
-    db.truncate()
+    #Delete all rows in the songs table
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM songs;")
+    conn.commit()
+    cursor.close()
+    # Display a success message
+    st.success("Song request list has been cleared.")
+
+def isEmpty():
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM songs;")
+    if cursor.rowcount == 0:
+        cursor.close()
+        return True
+    else:
+        cursor.close()
+        return False
 
 # Define a function to refresh the displayed list of tracks
 def refresh():
     with st.spinner("Pulling song requests. Please wait"):
         # Check if the database is empty
-        if len(db) == 0:
+        if isEmpty():
             # If the database is empty, display a warning message
             st.warning('Song request list is empty.')
         else:
-            # Get the list of all tracks in the database
-            all_tracks = db.all()
+            #use psycopg2 to query the database for all songs in the songs table
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM songs;")
+            all_tracks = cursor.fetchall()
+            cursor.close()
+            print(all_tracks)
+            #[(1, 'https://i.scdn.co/image/ab67616d00001e020f8718305d5f88697e609b48', '0lnM7BmAGU3jKuuuiAK3ap'), (2, 'https://i.scdn.co/image/ab67616d00001e026acaae5585628cc2a97f053f', '0v0QJqLvo3tnqwYLdLqdza')]
 
             # Create empty lists to store the unique tracks and images
             unique_tracks = []
@@ -100,10 +136,10 @@ def refresh():
             # Iterate through the list of all tracks
             for track in all_tracks:
                 # Check if the track is already in the unique tracks list
-                if track['track_id'] not in unique_tracks:
+                if track[2] not in unique_tracks:
                     # Track is not in the list, so add it to the list
-                    unique_tracks.append(track['track_id'])
-                    unique_images.append(track['image'])
+                    unique_tracks.append(track[2])
+                    unique_images.append(track[1])
             
             # Display the updated list of current tracks
             for x, track in enumerate(unique_tracks):
