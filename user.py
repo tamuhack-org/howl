@@ -6,6 +6,15 @@ import time
 from dotenv import load_dotenv
 import os
 
+import psycopg2
+
+conn = psycopg2.connect(database="da0laf99l2pc0t",
+                        host="ec2-3-217-251-77.compute-1.amazonaws.com",
+                        user="amxxeixujtoqai",
+                        password="915b8264daf5c8d065ac37ce5033dd68b03bbc9f0cb9ebdd271443f8cef9abc6",
+                        port="5432")
+
+
 ## STREAMLIT SETUP ##
 # Set page configuration for Streamlit
 st.set_page_config(
@@ -61,9 +70,7 @@ auth_manager = SpotifyClientCredentials(client_id=CLIENT_ID, client_secret=CLIEN
 sp = spotipy.Spotify(auth_manager=auth_manager)
 
 # Initialize TinyDB database
-db = TinyDB('data.json')
-
-# Set page title
+#db = TinyDB('data.json')
 st.title('Spotted')
 
 # Create two columns in the page
@@ -101,7 +108,10 @@ def add_to_queue():
     disabled_btn = False
     if c1.button(label="Add to queue", type="primary", disabled=disabled_btn):
         # Insert the track ID and album cover into the database
-        db.insert({'track_id' : track_id, 'image' : img_album})
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO songs (track_id, image) VALUES(%s, %s)", (track_id, img_album))
+        conn.commit() # <- We MUST commit to reflect the inserted data
+        cursor.close()
         # Display a success message
         status = st.empty()
         status.success("Song has been successfully added to queue")
