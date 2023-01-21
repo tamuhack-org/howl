@@ -8,11 +8,7 @@ import os
 
 import psycopg2
 
-conn = psycopg2.connect(database="da0laf99l2pc0t",
-                        host="ec2-3-217-251-77.compute-1.amazonaws.com",
-                        user="amxxeixujtoqai",
-                        password="915b8264daf5c8d065ac37ce5033dd68b03bbc9f0cb9ebdd271443f8cef9abc6",
-                        port="5432")
+
 
 
 ## STREAMLIT SETUP ##
@@ -64,10 +60,23 @@ load_dotenv()
 # Get client ID and secret from environment variables
 CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
+DATABASE_NAME = os.getenv("DATABASE_NAME")
+DATABASE_HOST = os.getenv("DATABASE_HOST")
+DATABASE_USER = os.getenv("DATABASE_USER")
+DATABASE_PASSWORD = os.getenv("DATABASE_PASSWORD")
+DATABASE_PORT = os.getenv("DATABASE_PORT")
+
+
 
 # Initialize Spotify client with client ID and secret
 auth_manager = SpotifyClientCredentials(client_id=CLIENT_ID, client_secret=CLIENT_SECRET)
 sp = spotipy.Spotify(auth_manager=auth_manager)
+
+conn = psycopg2.connect(database=DATABASE_NAME,
+                        host=DATABASE_HOST,
+                        user=DATABASE_USER,
+                        password=DATABASE_PASSWORD,
+                        port=DATABASE_PORT)
 
 # Initialize TinyDB database
 #db = TinyDB('data.json')

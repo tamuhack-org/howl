@@ -6,3 +6,4 @@ tinydb
 watchdog
 asyncio
 python-dotenv
+psycopg2-binary
