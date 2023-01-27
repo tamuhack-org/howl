@@ -60,7 +60,7 @@ DATABASE_PASSWORD = os.getenv("DATABASE_PASSWORD")
 DATABASE_PORT = os.getenv("DATABASE_PORT")
 
 # Use the prompt_for_user_token function to get a Spotify API token with the necessary permissions
-token = util.prompt_for_user_token('3811owvmir6anz9q1h21dc6c7', "user-modify-playback-state", client_id=CLIENT_ID, client_secret=CLIENT_SECRET, redirect_uri="http://localhost:3000")
+token = util.prompt_for_user_token('jadenbanze', "user-modify-playback-state", client_id=CLIENT_ID, client_secret=CLIENT_SECRET, redirect_uri="http://localhost:3000")
 
 # Create a Spotify object using the API token
 sp = spotipy.Spotify(auth=token)
