@@ -118,7 +118,7 @@ def add_to_queue():
     if c1.button(label="Add to queue", type="primary", disabled=disabled_btn):
         # Insert the track ID and album cover into the database
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO songs (track_id, image) VALUES(%s, %s)", (track_id, img_album))
+        cursor.execute("INSERT INTO songs (track_id, image, title) VALUES(%s, %s, %s)", (track_id, img_album, track_title))
         conn.commit() # <- We MUST commit to reflect the inserted data
         cursor.close()
         # Display a success message
@@ -145,6 +145,7 @@ if selected_track is not None and len(tracks) > 0:
             if str_temp == selected_track:
                 track_id = track['id']
                 track_album = track['album']['name']
+                track_title = track['name']
                 img_album = track['album']['images'][1]['url']
 
     # If a track ID has been found, display the album cover and add the track to the queue
