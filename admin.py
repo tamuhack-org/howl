@@ -178,9 +178,9 @@ if check_password():
                     # Display the track title
                     c1.subheader(title)
                     # Display the track image
-                    c1.image(unique_images[x])
+                    #c1.image(unique_images[x])
                     # Display the track preview audio player
-                    c1.audio(sp.track(unique_tracks[x])['preview_url'])
+                    #c1.audio(sp.track(unique_tracks[x])['preview_url'])
                     # Add a button to add the track to the queue
                     c1.button(f"Click to add '{title}' to queue", on_click=functools.partial(addtoqueue, track), key=f"button-{x}", type="primary")
 
